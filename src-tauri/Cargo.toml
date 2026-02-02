@@ -1,5 +1,5 @@
 [package]
-name = "mobileherolauncher"
+name = "MobileHeroLauncher"
 version = "0.1.0"
 description = "MobileHero Windows Launcher - Low-latency controller server"
 authors = ["MobileHero"]

@@ -128,6 +128,7 @@ async fn handle_connection(
     
     let config = config::load_config(Some(config_path));
     let mut authenticated = false;
+    let mut pressed_keys = std::collections::HashSet::new();
     
     // Update client count
     {
@@ -209,7 +210,7 @@ async fn handle_connection(
                         
                         if let Ok(text) = msg.to_text() {
                             if let Ok(data) = serde_json::from_str::<ClientMessage>(text) {
-                                handle_input(&data, &config, &mut write, &app).await;
+                                handle_input(&data, &config, &mut write, &app, &mut pressed_keys).await;
                             }
                         }
                     }
@@ -252,6 +253,7 @@ async fn handle_input<S>(
     config: &Config,
     write: &mut S,
     app: &AppHandle,
+    pressed_keys: &mut std::collections::HashSet<String>,
 ) where
     S: SinkExt<Message> + Unpin,
     S::Error: std::fmt::Debug,
@@ -273,13 +275,20 @@ async fn handle_input<S>(
         
         "fret" => {
             if let Some(fret) = value {
+                let key_id = format!("fret_{}", fret);
                 if ["green", "red", "yellow", "blue", "orange"].contains(&fret) {
                     if pressed {
-                        keyboard::press_key(fret, config);
-                        let _ = app.emit("log", format!("[FRET] {} pressed", fret));
+                        if !pressed_keys.contains(&key_id) {
+                            keyboard::press_key(fret, config);
+                            let _ = app.emit("log", format!("[FRET] {} pressed", fret));
+                            pressed_keys.insert(key_id);
+                        }
                     } else {
-                        keyboard::release_key(fret, config);
-                        let _ = app.emit("log", format!("[FRET] {} released", fret));
+                        if pressed_keys.contains(&key_id) {
+                            keyboard::release_key(fret, config);
+                            let _ = app.emit("log", format!("[FRET] {} released", fret));
+                            pressed_keys.remove(&key_id);
+                        }
                     }
                 }
             }
@@ -287,47 +296,76 @@ async fn handle_input<S>(
         
         "strum" => {
             if let Some(direction) = value {
+                let key_id = format!("strum_{}", direction);
                 let key = format!("strum_{}", direction);
                 if pressed {
-                    keyboard::press_key(&key, config);
-                    let _ = app.emit("log", format!("[STRUM] {}", direction));
+                    if !pressed_keys.contains(&key_id) {
+                        keyboard::press_key(&key, config);
+                        let _ = app.emit("log", format!("[STRUM] {}", direction));
+                        pressed_keys.insert(key_id);
+                    }
                 } else {
-                    keyboard::release_key(&key, config);
+                    if pressed_keys.contains(&key_id) {
+                        keyboard::release_key(&key, config);
+                        pressed_keys.remove(&key_id);
+                    }
                 }
             }
         }
         
         "drum" => {
             if let Some(pad) = value {
+                let key_id = format!("drum_{}", pad);
                 let key = if pad == "kick" {
                     "drum_kick".to_string()
                 } else {
                     format!("drum_{}", pad)
                 };
+                
                 if pressed {
-                    keyboard::press_key(&key, config);
-                    let _ = app.emit("log", format!("[DRUM] {} hit", pad));
+                    if !pressed_keys.contains(&key_id) {
+                        keyboard::press_key(&key, config);
+                        let _ = app.emit("log", format!("[DRUM] {} hit", pad));
+                        pressed_keys.insert(key_id);
+                    }
                 } else {
-                    keyboard::release_key(&key, config);
+                    if pressed_keys.contains(&key_id) {
+                        keyboard::release_key(&key, config);
+                        pressed_keys.remove(&key_id);
+                    }
                 }
             }
         }
         
         "starpower" | "whammy" | "start" | "select" => {
+            let key_id = data.msg_type.clone();
             if pressed {
-                keyboard::press_key(&data.msg_type, config);
-                let _ = app.emit("log", format!("[ACTION] {} pressed", data.msg_type));
+                if !pressed_keys.contains(&key_id) {
+                    keyboard::press_key(&data.msg_type, config);
+                    let _ = app.emit("log", format!("[ACTION] {} pressed", data.msg_type));
+                    pressed_keys.insert(key_id);
+                }
             } else {
-                keyboard::release_key(&data.msg_type, config);
+                if pressed_keys.contains(&key_id) {
+                    keyboard::release_key(&data.msg_type, config);
+                    pressed_keys.remove(&key_id);
+                }
             }
         }
         
         "left" | "right" | "up" | "down" => {
+            let key_id = data.msg_type.clone();
             if pressed {
-                keyboard::press_key(&data.msg_type, config);
-                let _ = app.emit("log", format!("[NAV] {} pressed", data.msg_type));
+                if !pressed_keys.contains(&key_id) {
+                    keyboard::press_key(&data.msg_type, config);
+                    let _ = app.emit("log", format!("[NAV] {} pressed", data.msg_type));
+                    pressed_keys.insert(key_id);
+                }
             } else {
-                keyboard::release_key(&data.msg_type, config);
+                if pressed_keys.contains(&key_id) {
+                    keyboard::release_key(&data.msg_type, config);
+                    pressed_keys.remove(&key_id);
+                }
             }
         }
         
