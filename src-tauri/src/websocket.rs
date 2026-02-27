@@ -113,6 +113,11 @@ async fn handle_connection(
     state: Arc<Mutex<ServerState>>,
     app: AppHandle,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // Disable Nagle's algorithm for low latency packet sending
+    if let Err(e) = stream.set_nodelay(true) {
+        eprintln!("Failed to set TCP_NODELAY: {}", e);
+    }
+    
     let ws_stream = accept_async(stream).await?;
     let (mut write, mut read) = ws_stream.split();
     
@@ -252,7 +257,7 @@ async fn handle_input<S>(
     data: &ClientMessage,
     config: &Config,
     write: &mut S,
-    app: &AppHandle,
+    _app: &AppHandle,
     pressed_keys: &mut std::collections::HashSet<String>,
 ) where
     S: SinkExt<Message> + Unpin,
@@ -280,13 +285,13 @@ async fn handle_input<S>(
                     if pressed {
                         if !pressed_keys.contains(&key_id) {
                             keyboard::press_key(fret, config);
-                            let _ = app.emit("log", format!("[FRET] {} pressed", fret));
+                            // let _ = app.emit("log", format!("[FRET] {} pressed", fret));
                             pressed_keys.insert(key_id);
                         }
                     } else {
                         if pressed_keys.contains(&key_id) {
                             keyboard::release_key(fret, config);
-                            let _ = app.emit("log", format!("[FRET] {} released", fret));
+                            // let _ = app.emit("log", format!("[FRET] {} released", fret));
                             pressed_keys.remove(&key_id);
                         }
                     }
@@ -301,7 +306,7 @@ async fn handle_input<S>(
                 if pressed {
                     if !pressed_keys.contains(&key_id) {
                         keyboard::press_key(&key, config);
-                        let _ = app.emit("log", format!("[STRUM] {}", direction));
+                        // let _ = app.emit("log", format!("[STRUM] {}", direction));
                         pressed_keys.insert(key_id);
                     }
                 } else {
@@ -325,7 +330,7 @@ async fn handle_input<S>(
                 if pressed {
                     if !pressed_keys.contains(&key_id) {
                         keyboard::press_key(&key, config);
-                        let _ = app.emit("log", format!("[DRUM] {} hit", pad));
+                        // let _ = app.emit("log", format!("[DRUM] {} hit", pad));
                         pressed_keys.insert(key_id);
                     }
                 } else {
@@ -342,7 +347,7 @@ async fn handle_input<S>(
             if pressed {
                 if !pressed_keys.contains(&key_id) {
                     keyboard::press_key(&data.msg_type, config);
-                    let _ = app.emit("log", format!("[ACTION] {} pressed", data.msg_type));
+                    // let _ = app.emit("log", format!("[ACTION] {} pressed", data.msg_type));
                     pressed_keys.insert(key_id);
                 }
             } else {
@@ -358,7 +363,7 @@ async fn handle_input<S>(
             if pressed {
                 if !pressed_keys.contains(&key_id) {
                     keyboard::press_key(&data.msg_type, config);
-                    let _ = app.emit("log", format!("[NAV] {} pressed", data.msg_type));
+                    // let _ = app.emit("log", format!("[NAV] {} pressed", data.msg_type));
                     pressed_keys.insert(key_id);
                 }
             } else {
