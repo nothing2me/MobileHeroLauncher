@@ -1,0 +1,94 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: ''
+          - platform: ubuntu-22.04
+            args: ''
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      # Linux system dependencies required by Tauri and enigo
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libxdo-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'MobileHero v__VERSION__ - Cross-Platform Release'
+          releaseBody: |
+            ## 🖥️ Cross-Platform Support
+            This release adds **Linux support** alongside Windows. Both platforms are built from the same codebase.
+
+            ## 📦 Downloads
+            | Platform | File | Notes |
+            |----------|------|-------|
+            | Windows  | `MobileHeroLauncher_x64-setup.exe` | NSIS installer |
+            | Windows  | `MobileHeroLauncher_x64_en-US.msi` | MSI installer |
+            | Linux    | `MobileHeroLauncher_amd64.AppImage` | Universal, run anywhere |
+            | Linux    | `MobileHeroLauncher_amd64.deb` | Debian / Ubuntu |
+
+            ## 🐧 Linux Notes
+            - **AppImage**: `chmod +x MobileHeroLauncher_*.AppImage && ./MobileHeroLauncher_*.AppImage`
+            - **Firewall**: `sudo ufw allow 8080/tcp`
+            - Works on both X11 and Wayland (Clone Hero runs via XWayland)
+
+            ## 🛠 Installation / Updating
+            1. Download the installer for your OS from the assets below.
+            2. Launch the app and click **Start Server**.
+            3. Ensure your MobileHero Android app is updated to the latest version.
+
+            ---
+            *Keep on Shredding!* 🎸
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: false
