@@ -63,13 +63,39 @@ chmod +x MobileHeroLauncher_*.AppImage
 
 ## Building for Production
 
+These steps work **on your own machine**; you do not need GitHub Actions. Install the [prerequisites](#prerequisites) for your OS first.
+
 ```bash
+npm install
+npm run tauri build
+```
+
+On Linux, if `npm ci` is preferred (clean install from lockfile):
+
+```bash
+npm ci
 npm run tauri build
 ```
 
 Output locations:
 - **Windows**: `src-tauri/target/release/bundle/nsis/` (`.exe`) and `/msi/` (`.msi`)
 - **Linux**: `src-tauri/target/release/bundle/appimage/` (`.AppImage`) and `/deb/` (`.deb`)
+
+### Linux build checklist
+
+1. **Rust** (stable): [rustup.rs](https://rustup.rs/) — then `rustup default stable`.
+2. **Node.js** 18+.
+3. **System packages** (Debian/Ubuntu — same set as CI):
+
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y \
+     libwebkit2gtk-4.1-dev libxdo-dev build-essential curl wget file libssl-dev \
+     libayatana-appindicator3-dev librsvg2-dev
+   ```
+
+4. From the repo root: `npm install` (or `npm ci`), then `npm run tauri build`.
+5. If AppImage fails to run on your distro, install your distro’s **FUSE** / **libfuse** packages, or use the **`.deb`** from `src-tauri/target/release/bundle/deb/` on Debian-based systems.
 
 ## Usage
 1. Open **MobileHero Launcher** on your PC.
