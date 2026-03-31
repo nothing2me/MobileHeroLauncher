@@ -22,7 +22,14 @@ The PC companion app for **MobileHero**, turning your smartphone into a virtual 
 
 ### Linux
 - **Node.js** (v18 or newer)
-- **Rust** (for building the backend)
+- **Rust toolchain** (`cargo` on your `PATH`). Tauri runs `cargo metadata` during `tauri build`; if you only installed Node, you still need Rust. Install with [rustup](https://rustup.rs/):
+
+  ```bash
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  source "$HOME/.cargo/env"
+  cargo --version   # should print e.g. cargo 1.xx.x
+  ```
+
 - The following system libraries:
   ```bash
   sudo apt install libwebkit2gtk-4.1-dev libxdo-dev \
@@ -83,8 +90,21 @@ Output locations:
 
 ### Linux build checklist
 
-1. **Rust** (stable): [rustup.rs](https://rustup.rs/) — then `rustup default stable`.
-2. **Node.js** 18+.
+Do these **before** `npm run tauri build`. Order matters: install Rust first, then system libs, then Node deps.
+
+1. **Rust / Cargo** (required — without this you get `failed to run 'cargo metadata' … No such file or directory (os error 2)`):
+
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+   source "$HOME/.cargo/env"
+   rustup default stable
+   command -v cargo && cargo --version
+   ```
+
+   If `cargo` is still not found after a new terminal, add `source "$HOME/.cargo/env"` to your `~/.bashrc` or `~/.profile`.
+
+2. **Node.js** 18+ (`node --version`).
+
 3. **System packages** (Debian/Ubuntu — same set as CI):
 
    ```bash
@@ -95,6 +115,7 @@ Output locations:
    ```
 
 4. From the repo root: `npm install` (or `npm ci`), then `npm run tauri build`.
+
 5. If AppImage fails to run on your distro, install your distro’s **FUSE** / **libfuse** packages, or use the **`.deb`** from `src-tauri/target/release/bundle/deb/` on Debian-based systems.
 
 ## Usage
@@ -116,6 +137,8 @@ sudo ufw allow 8080/tcp
 **Network**: Both devices must be on the **same Wi-Fi network**.
 
 **Linux / Wayland**: The launcher works on both X11 and Wayland (via XWayland). Clone Hero itself runs under XWayland, so keyboard input is routed correctly.
+
+**Linux: `cargo metadata` / “No such file or directory (os error 2)”**: `cargo` is not installed or not on your `PATH`. Install Rust with rustup (see [Linux prerequisites](#linux) or the [Linux build checklist](#linux-build-checklist)), run `source "$HOME/.cargo/env"`, then try `npm run tauri build` again.
 
 ## License
 [MIT](LICENSE)
