@@ -30,13 +30,14 @@ The PC companion app for **MobileHero**, turning your smartphone into a virtual 
   cargo --version   # should print e.g. cargo 1.xx.x
   ```
 
-- The following system libraries:
+- The following system libraries (GTK/GLib **-dev** packages supply the `*.pc` files `pkg-config` needs for `gio-sys`, `glib-sys`, `gdk-sys`, etc.):
   ```bash
-  sudo apt install libwebkit2gtk-4.1-dev libxdo-dev \
+  sudo apt install pkg-config libgtk-3-dev libglib2.0-dev \
+    libwebkit2gtk-4.1-dev libxdo-dev \
     build-essential curl wget file libssl-dev \
     libayatana-appindicator3-dev librsvg2-dev
   ```
-  > On Fedora/RHEL: `sudo dnf install webkit2gtk4.1-devel libxdo-devel openssl-devel`
+  > On Fedora/RHEL: `sudo dnf install pkg-config gtk3-devel glib2-devel webkit2gtk4.1-devel libxdo-devel openssl-devel`
 
 ## Installation
 
@@ -110,6 +111,7 @@ Do these **before** `npm run tauri build`. Order matters: install Rust first, th
    ```bash
    sudo apt-get update
    sudo apt-get install -y \
+     pkg-config libgtk-3-dev libglib2.0-dev \
      libwebkit2gtk-4.1-dev libxdo-dev build-essential curl wget file libssl-dev \
      libayatana-appindicator3-dev librsvg2-dev
    ```
@@ -139,6 +141,8 @@ sudo ufw allow 8080/tcp
 **Linux / Wayland**: The launcher works on both X11 and Wayland (via XWayland). Clone Hero itself runs under XWayland, so keyboard input is routed correctly.
 
 **Linux: `cargo metadata` / “No such file or directory (os error 2)”**: `cargo` is not installed or not on your `PATH`. Install Rust with rustup (see [Linux prerequisites](#linux) or the [Linux build checklist](#linux-build-checklist)), run `source "$HOME/.cargo/env"`, then try `npm run tauri build` again.
+
+**Linux: `gio-2.0` / `glib-2.0` / `gdk-3.0` not found (pkg-config)**: Install the development packages above, especially **`libgtk-3-dev`**, **`libglib2.0-dev`**, and **`pkg-config`**, then run `pkg-config --exists gio-2.0 gdk-3.0 && echo ok`. If that prints `ok`, retry `npm run tauri build`.
 
 ## License
 [MIT](LICENSE)
